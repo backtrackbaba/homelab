@@ -14,13 +14,17 @@ ${DATA_ROOT}/media/{movies,tv,music}
 ${DATA_ROOT}/downloads/{incomplete,complete}
 ```
 
-qBittorrent and the Arr apps all mount `MEDIA_ROOT` and `DOWNLOAD_ROOT` at
-the same container-internal paths (`/data/media`, `/data/downloads`), so no
-remote path mapping is needed inside Sonarr/Radarr, and hardlinks between
-downloads and the library are possible **only if** `DOWNLOAD_ROOT` and
-`MEDIA_ROOT` are on the same host filesystem (true today; verify again
-after moving to external storage — see the hardlink test in
-`docs/`).
+qBittorrent, Sonarr, Radarr, and Bazarr all mount the **entire**
+`${DATA_ROOT}:/data` as one bind mount, rather than separate mounts for
+media and downloads. This matters: two separate `volumes:` entries each
+become their own mount point inside the container, and hardlinks fail
+with `Cross-device link` across them even though both point at
+subdirectories of the same real filesystem on the Mac. A single shared
+mount fixes this — verified via the hardlink test in
+`docs/MEDIA-PHOTOS-STORAGE.md`, which also covers the tradeoff (these
+containers can see `appdata/`/`immich/` too, not just their own paths).
+Re-run that test after any storage change, including the eventual move
+to external storage.
 
 Navidrome mounts `${MEDIA_ROOT}/music` **read-only**; it has no need to
 write tags or artwork in this phase.
@@ -64,16 +68,52 @@ Verified: library scan picks up new files automatically (file-watcher on
 `/music`), and Subsonic-protocol streaming (`/rest/stream.view`) works,
 which is what Android clients like Symfonium use.
 
-## Rollout order
+## Rollout status (Phase 3 pilot)
 
-1. Bring the stack up with no indexers/downloads configured yet.
-2. Add qBittorrent credentials, confirm the WebUI is reachable.
-3. Connect Prowlarr to qBittorrent and to Sonarr/Radarr.
-4. Add exactly one lawfully-sourced indexer, approved by the operator.
-5. Test with a single, small, manually-selected item before enabling
-   any broader automation.
-6. Confirm the download cap and `make storage-status` alerting work
-   before leaving automation running unattended.
+1. ✅ Stack brought up with no indexers/downloads configured.
+2. ✅ qBittorrent: permanent admin credential set (`QBITTORRENT_ADMIN_PASSWORD`
+   in `secrets.enc.env`). Hit a real gotcha here — see below.
+3. ✅ Sonarr/Radarr/Prowlarr: forms authentication configured
+   (`ARR_STACK_ADMIN_PASSWORD`, username `sai`). Bazarr: form auth
+   configured the same way via its own settings API.
+4. ✅ Prowlarr connected to Sonarr and Radarr as Applications (`addOnly`
+   sync). Sonarr and Radarr both have qBittorrent wired as their download
+   client, verified healthy via each app's `/health` endpoint (no
+   connectivity errors — only the expected "no indexers configured"
+   warnings). Bazarr connected to both and reports their live versions.
+5. ⬜ **Not done, by design**: no indexer has been added anywhere. Adding
+   one requires the operator to name a specific, lawful source — nothing
+   is configured until that happens.
+6. ⬜ Once an indexer is approved: test with a single, small,
+   manually-selected item before enabling any broader automation.
+7. ✅ `make storage-status` reflects real usage and the 120GB free-space
+   floor alert is wired (verified against actual disk state).
+   qBittorrent queueing capped at 3 active downloads / 5 active torrents
+   as a coarse growth guardrail (qBittorrent has no native "pause below
+   free space X" setting to hook into directly).
+
+### qBittorrent gotcha: Host header validation
+
+Accessing qBittorrent's WebUI through Docker's published port (i.e. from
+the Mac host, not from inside the container) returned a bare `401
+Unauthorized` for *every* request, including the login page itself —
+before any credentials were even involved. This is qBittorrent 5.x's Host
+header validation rejecting requests that arrive through Colima's
+port-forwarding path, which don't look "local" to it. `ServerDomains=*`
+in its config did **not** fix this (the wildcard doesn't reliably work in
+this version); the working fix was setting
+`WebUI\HostHeaderValidation=false` directly in
+`${APPDATA_ROOT}/qbittorrent/qBittorrent/qBittorrent.conf` while the
+container was stopped. This persists on the host bind mount, so it
+survives container recreation — but if that config directory is ever
+reset, this needs reapplying before the WebUI is reachable from outside
+the container at all.
+
+### Prowlarr uses a different API version
+
+Sonarr and Radarr's REST API is at `/api/v3/...`; Prowlarr — despite
+sharing the same Servarr codebase — uses `/api/v1/...`. Easy to trip over
+when scripting against all three uniformly.
 
 No FlareSolverr, no piracy-oriented indexers, no automated bulk
 acquisition — this stack is for lawfully obtained or owned media only.

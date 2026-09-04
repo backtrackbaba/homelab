@@ -47,14 +47,30 @@ it. Moving to external storage later means changing that one value —
 ## Hardlink verification
 
 qBittorrent and the Arr apps expect to hardlink a finished download into
-the media library instead of copying it, which only works if
-`DOWNLOAD_ROOT` and `MEDIA_ROOT` are on the same filesystem *as seen by
-the container*, not just the same macOS volume — virtiofs and Colima's own
-overlay/ext4 root can each introduce their own boundary. Verify before
-relying on it:
+the media library instead of copying it. This does **not** just need
+`DOWNLOAD_ROOT` and `MEDIA_ROOT` to be on the same host filesystem — it
+needs them to be part of the *same bind mount* inside the container.
+Two separate `volumes:` entries (`${MEDIA_ROOT}:/data/media` and
+`${DOWNLOAD_ROOT}:/data/downloads`) each become their own mount point
+inside the container, which looks like a different device to `ln(1)`
+even though both point at subdirectories of the same real filesystem on
+the Mac — this was hit directly during the Phase 3 pilot (`Cross-device
+link`, despite `MEDIA_ROOT` and `DOWNLOAD_ROOT` both living under
+`DATA_ROOT`).
+
+The fix — already applied in `stacks/media/compose.yaml` — is to mount
+the shared parent once: `${DATA_ROOT}:/data`, so `/data/media` and
+`/data/downloads` are both inside a single bind mount. This is also the
+standard pattern in the wider Servarr/TRaSH-guides community, for exactly
+this reason. It does mean qBittorrent, Sonarr, Radarr, and Bazarr can see
+`appdata/` and `immich/` inside their container too, not just their
+own working paths — an acceptable trade-off for a single-operator
+homelab with no untrusted users, but worth knowing.
+
+Verify hardlinks are actually working after any mount change (including
+the eventual move to external storage):
 
 ```bash
-# from inside a container that mounts both /data/downloads and /data/media
 docker compose -f stacks/media/compose.yaml exec sonarr sh -c '
   set -e
   echo test > /data/downloads/hardlink-test.txt
@@ -65,12 +81,10 @@ docker compose -f stacks/media/compose.yaml exec sonarr sh -c '
 '
 ```
 
-If the inode numbers differ, the mount does not support hardlinks across
-those two paths. In that case, configure Sonarr/Radarr to use a safe
-copy-then-verify-then-delete workflow instead (Settings → Media
-Management → disable "Use Hardlinks instead of Copy"), document the extra
-disk churn this causes, and re-test after any storage change (including
-the eventual move to external storage).
+If the inode numbers ever differ again, fall back to a safe
+copy-then-verify-then-delete workflow (Sonarr/Radarr Settings → Media
+Management → disable "Use Hardlinks instead of Copy") and document the
+extra disk churn this causes.
 
 ## Internal SSD guardrails
 
