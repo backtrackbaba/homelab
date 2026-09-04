@@ -52,6 +52,18 @@ make media-status
 make media-update
 ```
 
+## Navidrome status
+
+Deployed and verified as of the Phase 2 pilot, ahead of the rest of this
+stack. Admin account created through its web UI at `:4533` — unlike
+Jellyfin, Navidrome's first-run admin creation is not a documented REST
+endpoint (it's driven by the React SPA's internal calls), so this one
+needs a human at the browser rather than API scripting. Credential stored
+as `NAVIDROME_ADMIN_PASSWORD` in the repo root's `secrets.enc.env`.
+Verified: library scan picks up new files automatically (file-watcher on
+`/music`), and Subsonic-protocol streaming (`/rest/stream.view`) works,
+which is what Android clients like Symfonium use.
+
 ## Rollout order
 
 1. Bring the stack up with no indexers/downloads configured yet.
