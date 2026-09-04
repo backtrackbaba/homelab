@@ -1,0 +1,5 @@
+.env
+.runtime/
+secrets.env
+*.decrypted.env
+.DS_Store

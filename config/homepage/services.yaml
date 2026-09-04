@@ -1,0 +1,55 @@
+- Core:
+    - Nginx Proxy Manager:
+        href: https://proxy.home.saiprasad.io
+        description: Reverse proxy and certificates
+        icon: nginx-proxy-manager.png
+        server: local
+        container: npm
+    - Dockge:
+        href: https://dockge.home.saiprasad.io
+        description: Compose stack management
+        icon: dockge.png
+        server: local
+        container: dockge
+    - Uptime Kuma:
+        href: https://uptime.home.saiprasad.io
+        description: Service health monitoring
+        icon: uptime-kuma.png
+        server: local
+        container: uptime-kuma
+    - Dozzle:
+        href: https://logs.home.saiprasad.io
+        description: Live container logs
+        icon: dozzle.png
+        server: local
+        container: dozzle
+- Applications:
+    - n8n:
+        href: https://n8n.home.saiprasad.io
+        description: Local workflow automation
+        icon: n8n.png
+        server: local
+        container: n8n
+    - ntfy:
+        href: https://ntfy.home.saiprasad.io
+        description: Push notifications
+        icon: ntfy.png
+        server: local
+        container: ntfy
+    - Speedtest Tracker:
+        href: https://speedtest.home.saiprasad.io
+        description: Internet speed history
+        icon: speedtest-tracker.png
+        server: local
+        container: speedtest
+- Operations:
+    - PostgreSQL:
+        description: Internal database service
+        icon: postgres.png
+        server: local
+        container: postgres
+    - Redis:
+        description: Internal cache and queue service
+        icon: redis.png
+        server: local
+        container: redis

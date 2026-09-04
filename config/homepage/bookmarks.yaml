@@ -1,0 +1,5 @@
+- Administration:
+    - Tailscale Admin:
+        - href: https://login.tailscale.com/admin/machines
+    - Domain DNS:
+        - href: https://dash.cloudflare.com/

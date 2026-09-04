@@ -1,0 +1,14 @@
+title: Sai's Home Server
+headerStyle: clean
+statusStyle: dot
+hideVersion: true
+layout:
+  Core:
+    style: row
+    columns: 4
+  Applications:
+    style: row
+    columns: 3
+  Operations:
+    style: row
+    columns: 4
