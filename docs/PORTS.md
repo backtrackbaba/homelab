@@ -28,6 +28,7 @@ router port forward.
 | `7878` | Radarr | |
 | `9696` | Prowlarr | |
 | `6767` | Bazarr | |
+| `8686` | Lidarr | |
 | `4533` | Navidrome | |
 | `5055` | Seerr | Request UI for Jellyfin/Sonarr/Radarr; ties into Jellyfin's own accounts, no separate credential |
 | `2283` | Immich server | |

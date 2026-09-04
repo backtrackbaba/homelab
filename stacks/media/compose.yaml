@@ -71,6 +71,17 @@ services:
       - ${APPDATA_ROOT}/bazarr:/config
       - ${DATA_ROOT}:/data
 
+  lidarr:
+    <<: *common
+    image: lscr.io/linuxserver/lidarr:3.1.0
+    container_name: lidarr
+    environment: *common-env
+    ports:
+      - "${BIND_ADDRESS}:8686:8686"
+    volumes:
+      - ${APPDATA_ROOT}/lidarr:/config
+      - ${DATA_ROOT}:/data
+
   seerr:
     restart: unless-stopped
     logging:

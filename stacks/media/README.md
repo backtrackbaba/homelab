@@ -1,8 +1,8 @@
 # Media automation stack
 
-Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Navidrome, and Seerr.
-Independent Compose project (`saiprasad-media`) from the homelab core
-stack and from `stacks/photos`.
+Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, Navidrome, and
+Seerr. Independent Compose project (`saiprasad-media`) from the homelab
+core stack and from `stacks/photos`.
 
 ## Storage
 
@@ -39,6 +39,7 @@ write tags or artwork in this phase.
 | Radarr | 7878 | |
 | Prowlarr | 9696 | |
 | Bazarr | 6767 | |
+| Lidarr | 8686 | |
 | Navidrome | 4533 | |
 | Seerr | 5055 | |
 
@@ -68,6 +69,21 @@ as `NAVIDROME_ADMIN_PASSWORD` in the repo root's `secrets.enc.env`.
 Verified: library scan picks up new files automatically (file-watcher on
 `/music`), and Subsonic-protocol streaming (`/rest/stream.view`) works,
 which is what Android clients like Symfonium use.
+
+## Lidarr
+
+Music's equivalent of Sonarr/Radarr — monitors artists/albums and grabs
+via indexers, same pattern as the rest of the Arr family. Wired up the
+same way: forms auth (`ARR_STACK_ADMIN_PASSWORD`, username `sai`),
+qBittorrent as its download client (category `lidarr`), root folder at
+`/data/media/music`, registered as an application in Prowlarr. Like
+Sonarr/Radarr, it currently has no indexer and cannot search or grab
+anything — deployed ahead of that so the wiring is ready. There is no
+polished "Seerr for music"; until there's a real source to search
+against, dropping a legally-sourced audio file into
+`${MEDIA_ROOT}/music` and letting Navidrome's file-watcher pick it up
+(already verified working) remains the simplest real workflow for a
+single-listener setup.
 
 ## Seerr
 
