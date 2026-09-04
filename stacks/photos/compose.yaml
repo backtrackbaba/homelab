@@ -30,6 +30,11 @@ services:
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
+    environment:
+      # env_file above loads the literal DB_PASSWORD placeholder from
+      # .env; this override takes precedence and picks up the real
+      # secret that `make photos-up` exports as a shell env var.
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "${BIND_ADDRESS}:2283:2283"
     depends_on:
