@@ -3,3 +3,5 @@
 secrets.env
 *.decrypted.env
 .DS_Store
+/backups/
+config/homepage/logs/

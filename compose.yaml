@@ -4,6 +4,11 @@ x-common: &common
   restart: unless-stopped
   networks:
     - proxy
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
 
 services:
   npm:

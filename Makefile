@@ -7,7 +7,10 @@ RUNTIME_DIR := $(PROJECT_DIR)/.runtime
 SOPS_AGE_KEY_FILE ?= $(HOME)/.config/sops/age/keys.txt
 SERVICE ?=
 
-.PHONY: help init install-tools age-key sops-config secrets-create secrets-edit secrets-decrypt bootstrap up down restart status ports logs pull update config doctor clean-runtime
+.PHONY: help init install-tools age-key sops-config secrets-create secrets-edit secrets-decrypt bootstrap up down restart status ports logs pull update config doctor clean-runtime \
+	media-up media-down media-logs media-status media-pull media-update \
+	photos-up photos-down photos-logs photos-status photos-backup photos-update \
+	storage-status
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "Usage: make <target>\n\nTargets:\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -95,3 +98,56 @@ doctor: ## Check required files, tools, Docker, and configured directories
 clean-runtime: ## Delete only decrypted runtime secret files
 	@rm -rf $(RUNTIME_DIR)
 	@mkdir -p $(RUNTIME_DIR) && chmod 700 $(RUNTIME_DIR)
+
+media-up: ## Bring up the media automation stack (Sonarr/Radarr/Prowlarr/Bazarr/qBittorrent/Navidrome)
+	@cd $(PROJECT_DIR)/stacks/media && \
+	test -f .env || cp .env.example .env; \
+	set -a; source .env; set +a; \
+	mkdir -p "$$APPDATA_ROOT/sonarr" "$$APPDATA_ROOT/radarr" "$$APPDATA_ROOT/prowlarr" "$$APPDATA_ROOT/bazarr" "$$APPDATA_ROOT/qbittorrent" "$$APPDATA_ROOT/navidrome"; \
+	mkdir -p "$$MEDIA_ROOT/movies" "$$MEDIA_ROOT/tv" "$$MEDIA_ROOT/music"; \
+	mkdir -p "$$DOWNLOAD_ROOT/incomplete" "$$DOWNLOAD_ROOT/complete"; \
+	docker compose up -d
+
+media-down: ## Stop the media automation stack
+	@cd $(PROJECT_DIR)/stacks/media && docker compose down
+
+media-logs: ## Follow media stack logs; optionally pass SERVICE=sonarr
+	@cd $(PROJECT_DIR)/stacks/media && docker compose logs -f $(SERVICE)
+
+media-status: ## Show media stack container status
+	@cd $(PROJECT_DIR)/stacks/media && docker compose ps
+
+media-pull: ## Pull newer media stack images
+	@cd $(PROJECT_DIR)/stacks/media && docker compose pull
+
+media-update: media-pull media-up ## Pull images and recreate the media stack
+
+photos-up: ## Bring up the Immich photo/video stack
+	@cd $(PROJECT_DIR) && SOPS_AGE_KEY_FILE="$(SOPS_AGE_KEY_FILE)" ./scripts/decrypt-secrets.sh >/dev/null
+	@cd $(PROJECT_DIR)/stacks/photos && \
+	test -f .env || cp .env.example .env; \
+	set -a; source .env; set +a; \
+	mkdir -p "$$UPLOAD_LOCATION" "$$DB_DATA_LOCATION"; \
+	DB_PASSWORD="$$(sed -n 's/^IMMICH_DB_PASSWORD=//p' $(RUNTIME_DIR)/secrets.env | tail -n1)" docker compose up -d
+
+photos-down: ## Stop the Immich stack
+	@cd $(PROJECT_DIR)/stacks/photos && docker compose down
+
+photos-logs: ## Follow photos stack logs; optionally pass SERVICE=immich-server
+	@cd $(PROJECT_DIR)/stacks/photos && docker compose logs -f $(SERVICE)
+
+photos-status: ## Show photos stack container status
+	@cd $(PROJECT_DIR)/stacks/photos && docker compose ps
+
+photos-backup: ## Back up the Immich database (originals are not included; see docs)
+	@mkdir -p $(PROJECT_DIR)/backups/immich
+	@ts=$$(date +%Y%m%d-%H%M%S); \
+	docker exec immich_postgres pg_dumpall -U immich | gzip > $(PROJECT_DIR)/backups/immich/immich-$$ts.sql.gz; \
+	echo "Backup written to backups/immich/immich-$$ts.sql.gz"
+
+photos-update: photos-backup ## Back up, pull, and recreate the Immich stack (read release notes first)
+	@cd $(PROJECT_DIR)/stacks/photos && docker compose pull
+	@$(MAKE) --no-print-directory photos-up
+
+storage-status: ## Report host, Docker, and DATA_ROOT disk usage
+	@cd $(PROJECT_DIR) && ./scripts/storage-status.sh
