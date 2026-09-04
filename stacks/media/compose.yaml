@@ -71,6 +71,27 @@ services:
       - ${APPDATA_ROOT}/bazarr:/config
       - ${DATA_ROOT}:/data
 
+  seerr:
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    image: ghcr.io/seerr-team/seerr:v3.4.1
+    container_name: seerr
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: info
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${BIND_ADDRESS}:5055:5055"
+    volumes:
+      - ${APPDATA_ROOT}/seerr:/app/config
+
   navidrome:
     restart: unless-stopped
     logging:
