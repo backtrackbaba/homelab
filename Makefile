@@ -45,7 +45,7 @@ secrets-create: init sops-config ## Create encrypted secrets.enc.env from the ex
 	@test -f "$(SOPS_AGE_KEY_FILE)" || { echo "Run: make age-key" >&2; exit 1; }
 	@test ! -f $(PROJECT_DIR)/secrets.enc.env || { echo "secrets.enc.env already exists; use make secrets-edit" >&2; exit 1; }
 	@set -euo pipefail; \
-	tmp=$$(mktemp); \
+	tmp=$$(mktemp "$(RUNTIME_DIR)/secrets-create.XXXXXX"); \
 	trap 'rm -f "$$tmp" "$(PROJECT_DIR)/secrets.enc.env.tmp"' EXIT; \
 	cp "$(PROJECT_DIR)/secrets.example.env" "$$tmp"; \
 	SOPS_AGE_KEY_FILE="$(SOPS_AGE_KEY_FILE)" sops --encrypt --filename-override secrets.enc.env "$$tmp" > "$(PROJECT_DIR)/secrets.enc.env.tmp"; \

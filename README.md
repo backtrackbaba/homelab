@@ -29,12 +29,17 @@ The Git repository contains Compose and configuration files:
 All persistent container data stays in one separate location:
 
 ```text
-/Users/Shared/homelab/
+/Users/sai-mini/homelab/
 ├── data/
 └── stacks/
 ```
 
-Change `DATA_ROOT` and `STACKS_ROOT` in `.env` later if you move the data to an external SSD.
+This lives under the operator's home directory because the container runtime (Colima) only
+shares `$HOME` into its Linux VM by default — `/Users/Shared` is not mounted and silently
+produces phantom, disconnected bind-mount directories inside the VM instead of an error.
+
+Change `DATA_ROOT` and `STACKS_ROOT` in `.env` later if you move the data to an external SSD
+(and add the new mount point to Colima's VM config, since only `$HOME` is shared today).
 
 ## Extract or clone into the expected location
 
