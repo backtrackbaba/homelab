@@ -11,6 +11,11 @@ x-common: &common
     PUID: ${PUID}
     PGID: ${PGID}
     TZ: ${TZ}
+    # IPv6 egress is broken in this Docker network; the .NET-based Arr
+    # apps hang for a long time trying it before falling back to IPv4
+    # (plain curl fails fast and isn't affected). Force IPv4-only.
+    DOTNET_SYSTEM_NET_DISABLEIPV6: "1"
+    DOTNET_SYSTEM_NET_HTTP_SOCKETSHTTPHANDLER_HTTP2SUPPORT: "false"
 
 services:
   qbittorrent:
@@ -102,6 +107,9 @@ services:
       - "${BIND_ADDRESS}:5055:5055"
     volumes:
       - ${APPDATA_ROOT}/seerr:/app/config
+    networks:
+      - default
+      - core-proxy
 
   navidrome:
     restart: unless-stopped
@@ -121,3 +129,12 @@ services:
     volumes:
       - ${APPDATA_ROOT}/navidrome:/data
       - ${MEDIA_ROOT}/music:/music:ro
+
+networks:
+  default: {}
+  # Lets Seerr reach ntfy (in the core stack's Compose project) by
+  # container name for notifications, without publishing ntfy's port to
+  # the host -- only the reverse proxy is supposed to do that.
+  core-proxy:
+    name: saiprasad_proxy
+    external: true

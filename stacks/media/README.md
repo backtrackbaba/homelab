@@ -101,6 +101,37 @@ are both registered as servers (`activeProfileId: 4` / HD-1080p,
 its own schedule (`sonarr-scan`/`radarr-scan` jobs); verified correct
 after a manual run — see the Pioneer One test below.
 
+### Notifications via ntfy
+
+Seerr is configured to send notifications through the core stack's `ntfy`
+instance (topic `seerr-homelab`), covering media pending/approved/
+available/failed and test notifications (`types: 62`). Two things were
+needed beyond the obvious settings API call:
+
+- **Cross-project networking**: `ntfy` lives in the core stack's Compose
+  project on the `saiprasad_proxy` network and has no host port by
+  itself; Seerr lives in this stack's own project/network. Rather than
+  publish `ntfy`'s port to reach it, `seerr` is attached to both its own
+  `default` network and the external `saiprasad_proxy` network (see the
+  `networks:` block at the bottom of `compose.yaml`), so it can resolve
+  `http://ntfy:80` directly.
+- **ntfy auth**: the core stack's `ntfy` config sets
+  `auth-default-access: deny-all` (a good default — don't weaken it
+  globally). A dedicated `seerr` user was created with **write-only**
+  access to just the `seerr-homelab` topic
+  (`NTFY_SEERR_PASSWORD` in `secrets.enc.env`), and anonymous **read-only**
+  access was granted to that one topic so a phone can subscribe without
+  its own login. Every other topic stays fully denied.
+
+`ntfy` itself is now published on `0.0.0.0:8880` (core stack's
+`compose.yaml`) specifically so phones can subscribe over Tailscale/LAN —
+this is ahead of the eventual NPM/DNS setup described in
+`docs/DOMAIN-AND-TAILSCALE.md`, not a replacement for it.
+
+**To subscribe from a phone**: install the ntfy app, add topic
+`seerr-homelab` at server `http://<tailscale-IP-or-hostname>:8880` — no
+login needed to read.
+
 ## Rollout status (Phase 3 pilot) — complete, verified end-to-end
 
 1. ✅ Stack brought up with no indexers/downloads configured.

@@ -115,6 +115,8 @@ services:
     command: serve
     environment:
       TZ: ${TZ}
+    ports:
+      - "${BIND_ADDRESS}:8880:80"
     volumes:
       - ./config/ntfy/server.yml:/etc/ntfy/server.yml:ro
       - ${DATA_ROOT}/ntfy/cache:/var/cache/ntfy
