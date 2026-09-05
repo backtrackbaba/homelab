@@ -1,5 +1,40 @@
 # saiprasad.io and Tailscale routing
 
+## DNS record type: A, not CNAME (updated after real-world testing)
+
+The original plan below documents a CNAME to the Mac's `.ts.net`
+MagicDNS name as the primary approach, with a plain A record to the
+Mac's Tailscale IPv4 as a fallback "if clients do not resolve it
+consistently." That fallback turned out to be necessary, not optional.
+
+The CNAME approach worked from macOS but failed on Android (resolved by
+IP, not by name) even with MagicDNS enabled, a global nameserver
+(1.1.1.1) configured, and DNS override on in the Tailscale admin
+console — a fully correct Tailscale setup. The reason: macOS's resolver
+does its own per-domain-suffix routing (a query for a name ending in
+`.ts.net` gets automatically routed to Tailscale's `100.100.100.100`
+resolver, independent of Tailscale's own DNS forwarding logic), so the
+external CNAME → internal `.ts.net` chain resolves correctly purely by
+accident of macOS's resolver architecture. Android has no equivalent
+mechanism — it uses Tailscale as its one and only DNS server, and
+Tailscale's forwarder does not itself re-chase a CNAME it forwarded
+externally back into its own MagicDNS zone. The client-side "everything
+looks configured correctly" state gave no indication of this; it only
+surfaced by testing from an actual Android device.
+
+**Current, working setup**: both `home.saiprasad.io` and
+`*.home.saiprasad.io` are plain **A records** pointing directly at the
+Mac's stable Tailscale IPv4 (`tailscale ip -4`), managed via Cloudflare's
+API. This resolves identically on every platform through ordinary public
+DNS — no Tailscale-specific resolution step involved at all. Reaching
+the IP once resolved still requires being on the tailnet for routing,
+which is the actual security boundary; DNS resolution was the only piece
+that needed to not depend on Tailscale's resolver.
+
+If the Mac's Tailscale IP ever changes (rare — Tailscale IPs are stable
+per-device, but not permanently guaranteed), both `A` records need
+updating to match. `tailscale ip -4` gets the current value.
+
 ## Status: implemented and verified
 
 DNS, the wildcard certificate, and all 8 Proxy Host entries below are live
