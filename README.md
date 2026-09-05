@@ -17,6 +17,8 @@ A private, Tailscale-first container platform designed to live at:
 - Uptime Kuma
 - Dozzle
 - Dockge
+- Vaultwarden (password manager)
+- Diun (update notifications, no auto-update)
 
 ## Repository and storage layout
 

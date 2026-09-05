@@ -183,6 +183,53 @@ services:
       - ${DATA_ROOT}/dockge:/app/data
       - ${STACKS_ROOT}:/opt/stacks
 
+  vaultwarden:
+    <<: *common
+    image: vaultwarden/server:1.37.2
+    container_name: vaultwarden
+    env_file:
+      - ./.runtime/secrets.env
+    environment:
+      TZ: ${TZ}
+      DOMAIN: https://${VAULTWARDEN_HOST}
+      WEBSOCKET_ENABLED: "true"
+      # Flip to false once the one account is created -- see
+      # docs for the exact make target/timing.
+      SIGNUPS_ALLOWED: "true"
+    ports:
+      - "${BIND_ADDRESS}:8222:80"
+    volumes:
+      - ${DATA_ROOT}/vaultwarden:/data
+
+  diun:
+    <<: *common
+    image: crazymax/diun:4.33.0
+    container_name: diun
+    command: serve
+    env_file:
+      - ./.runtime/secrets.env
+    environment:
+      TZ: ${TZ}
+      DIUN_WATCH_WORKERS: "10"
+      DIUN_WATCH_SCHEDULE: "0 0 8 * * *"
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+      DIUN_NOTIF_WEBHOOK_ENDPOINT: http://ntfy/diun-updates
+      DIUN_NOTIF_WEBHOOK_METHOD: POST
+      # DIUN_NOTIF_WEBHOOK_HEADERS_AUTHORIZATION comes from env_file above
+      # (secrets.enc.env), not this environment: block -- env_file values
+      # aren't subject to ${...} substitution, so setting it here would
+      # silently pick up nothing. Same class of bug as the Immich
+      # DB_PASSWORD issue; see stacks/photos/README.md.
+      #
+      # No bodyTemplate field exists on Diun's webhook notifier (despite
+      # the docs page implying it does) -- it always sends its own fixed
+      # JSON payload. See stacks/media/README.md-style notes: verified
+      # what ntfy actually does with that payload before trusting it.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${DATA_ROOT}/diun:/data
+
 networks:
   proxy:
     name: saiprasad_proxy
