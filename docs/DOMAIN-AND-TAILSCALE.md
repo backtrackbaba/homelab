@@ -36,6 +36,30 @@ via NPM's API — NPM stores its own copy of the DNS provider credentials
 internally once the certificate exists, so this token isn't referenced
 anywhere else in the repo.
 
+### Media/photos apps added afterward
+
+Four more hostnames were added once the media/photos stacks existed,
+covered by the same wildcard certificate (no new cert request needed):
+
+| Hostname | Forward host | Port | Notes |
+|---|---|---:|---|
+| jellyfin.home.saiprasad.io | `host.docker.internal` | 8096 | Jellyfin runs natively on macOS, not in a container — NPM reaches it via the host, not a container name |
+| seerr.home.saiprasad.io | `seerr` | 5055 | |
+| music.home.saiprasad.io | `navidrome` | 4533 | |
+| photos.home.saiprasad.io | `immich_server` | 2283 | |
+
+`navidrome` (in `stacks/media`) and `immich-server` (in `stacks/photos`)
+are each attached to the core stack's `saiprasad_proxy` network
+(`core-proxy` in their own compose files) so NPM can reach them by
+container name across separate Compose projects — the same pattern
+already used for Seerr's `ntfy` notifications. NPM's global
+`client_max_body_size` is 2000m, comfortably covering Immich photo/video
+uploads through the proxy.
+
+Sonarr, Radarr, Prowlarr, Bazarr, Lidarr, and qBittorrent were
+deliberately left on direct port access — day-to-day use goes through
+Seerr, not these admin UIs directly.
+
 
 ## Recommended naming
 

@@ -129,12 +129,15 @@ services:
     volumes:
       - ${APPDATA_ROOT}/navidrome:/data
       - ${MEDIA_ROOT}/music:/music:ro
+    networks:
+      - default
+      - core-proxy
 
 networks:
   default: {}
-  # Lets Seerr reach ntfy (in the core stack's Compose project) by
-  # container name for notifications, without publishing ntfy's port to
-  # the host -- only the reverse proxy is supposed to do that.
+  # Lets Seerr reach ntfy, and lets NPM reach Seerr/Navidrome by container
+  # name, without publishing extra ports just for that -- only the
+  # reverse proxy is supposed to publish app traffic to the host.
   core-proxy:
     name: saiprasad_proxy
     external: true
