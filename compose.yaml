@@ -19,9 +19,14 @@ services:
       - "${BIND_ADDRESS:-0.0.0.0}:80:80"
       - "${BIND_ADDRESS:-0.0.0.0}:443:443"
       - "${ADMIN_BIND_ADDRESS:-127.0.0.1}:81:81"
+    env_file:
+      - ./.runtime/secrets.env
     environment:
       TZ: ${TZ}
       DISABLE_IPV6: "true"
+      # Only takes effect while the user table is empty; NPM ignores
+      # these once an admin account exists. Safe to leave set.
+      INITIAL_ADMIN_EMAIL: sai@saiprasad.io
     volumes:
       - ${DATA_ROOT}/npm/data:/data
       - ${DATA_ROOT}/npm/letsencrypt:/etc/letsencrypt

@@ -1,5 +1,42 @@
 # saiprasad.io and Tailscale routing
 
+## Status: implemented and verified
+
+DNS, the wildcard certificate, and all 8 Proxy Host entries below are live
+and tested — every hostname in the table returns a real HTTP response
+over HTTPS (200 for reachable apps, 302 where the app itself redirects to
+its own login). Two real bugs were found and fixed while setting this up
+for the first time; both predate this specific session's changes:
+
+1. **NPM's admin account had never actually been created.** Its database
+   schema and migrations were fully set up, but the `user` table was
+   completely empty — the container had been recreated at some point
+   before the seed step ran (its default-admin creation only fires when
+   `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` env vars are set, since
+   newer NPM versions otherwise expect a browser setup wizard that never
+   ran here). Fixed by setting `INITIAL_ADMIN_EMAIL` (hardcoded in
+   `compose.yaml`) and `INITIAL_ADMIN_PASSWORD` (`secrets.enc.env`) and
+   recreating the container — NPM only acts on these while the user table
+   is empty, so they're safe to leave set permanently. NPM login:
+   `sai@saiprasad.io`, password in `secrets.enc.env` as
+   `INITIAL_ADMIN_PASSWORD`.
+2. **Speedtest Tracker's `APP_KEY` was still the literal placeholder
+   text** (`base64:replace-with-speedtest-tracker-app-key`) from the very
+   first `secrets.example.env` — never actually generated. This is a
+   Laravel app; without a real encryption key it 500'd on every request,
+   invisibly until reachability was actually tested end-to-end through
+   NPM. Fixed by generating a real key
+   (`openssl rand -base64 32`, prefixed `base64:`) and updating the
+   secret.
+
+Cloudflare API token (scoped to `Zone:DNS:Edit` on the `saiprasad.io`
+zone only, not the Global API Key) is stored as `CLOUDFLARE_API_TOKEN` in
+`secrets.enc.env`, used only for the one-time DNS-01 certificate request
+via NPM's API — NPM stores its own copy of the DNS provider credentials
+internally once the certificate exists, so this token isn't referenced
+anywhere else in the repo.
+
+
 ## Recommended naming
 
 Use `home.saiprasad.io` as the private application zone:
