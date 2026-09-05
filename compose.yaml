@@ -134,6 +134,20 @@ services:
     environment:
       TZ: ${TZ}
       HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_HOST}
+      # These need the real values present as shell env vars at
+      # `docker compose up` time (make up / scripts/up.sh already do
+      # this) -- env_file wouldn't give Homepage's {{HOMEPAGE_VAR_*}}
+      # templating the names it actually looks for. Same class of
+      # bug as the Immich DB_PASSWORD issue; see stacks/photos/README.md.
+      HOMEPAGE_VAR_JELLYFIN_API_KEY: ${JELLYFIN_HOMEPAGE_API_KEY}
+      HOMEPAGE_VAR_SEERR_API_KEY: ${SEERR_API_KEY}
+      HOMEPAGE_VAR_SONARR_API_KEY: ${SONARR_API_KEY}
+      HOMEPAGE_VAR_RADARR_API_KEY: ${RADARR_API_KEY}
+      HOMEPAGE_VAR_PROWLARR_API_KEY: ${PROWLARR_API_KEY}
+      HOMEPAGE_VAR_BAZARR_API_KEY: ${BAZARR_API_KEY}
+      HOMEPAGE_VAR_LIDARR_API_KEY: ${LIDARR_API_KEY}
+      HOMEPAGE_VAR_QBITTORRENT_PASSWORD: ${QBITTORRENT_ADMIN_PASSWORD}
+      HOMEPAGE_VAR_IMMICH_API_KEY: ${IMMICH_HOMEPAGE_API_KEY}
     volumes:
       - ./config/homepage:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -32,6 +32,9 @@ services:
     volumes:
       - ${APPDATA_ROOT}/qbittorrent:/config
       - ${DATA_ROOT}:/data
+    networks:
+      - default
+      - core-proxy
 
   sonarr:
     <<: *common
@@ -43,6 +46,9 @@ services:
     volumes:
       - ${APPDATA_ROOT}/sonarr:/config
       - ${DATA_ROOT}:/data
+    networks:
+      - default
+      - core-proxy
 
   radarr:
     <<: *common
@@ -54,6 +60,9 @@ services:
     volumes:
       - ${APPDATA_ROOT}/radarr:/config
       - ${DATA_ROOT}:/data
+    networks:
+      - default
+      - core-proxy
 
   prowlarr:
     <<: *common
@@ -64,6 +73,9 @@ services:
       - "${BIND_ADDRESS}:9696:9696"
     volumes:
       - ${APPDATA_ROOT}/prowlarr:/config
+    networks:
+      - default
+      - core-proxy
 
   bazarr:
     <<: *common
@@ -75,6 +87,9 @@ services:
     volumes:
       - ${APPDATA_ROOT}/bazarr:/config
       - ${DATA_ROOT}:/data
+    networks:
+      - default
+      - core-proxy
 
   lidarr:
     <<: *common
@@ -86,6 +101,9 @@ services:
     volumes:
       - ${APPDATA_ROOT}/lidarr:/config
       - ${DATA_ROOT}:/data
+    networks:
+      - default
+      - core-proxy
 
   seerr:
     restart: unless-stopped
